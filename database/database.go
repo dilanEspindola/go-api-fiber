@@ -24,7 +24,7 @@ func DbConnection() {
 		os.Exit(2)
 	}
 
-	log.Printf("DB is connected")
+	log.Println("DB is connected")
 
 	// migrations
 	log.Println("Running migrations")
