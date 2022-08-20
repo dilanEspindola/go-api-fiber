@@ -1,24 +1,16 @@
 package routes
 
 import (
+	"strconv"
+
 	"github.com/dilanEspindola/restapiFiber/database"
+	"github.com/dilanEspindola/restapiFiber/interfaces"
 	"github.com/dilanEspindola/restapiFiber/models"
 	"github.com/gofiber/fiber/v2"
 )
 
-type User struct {
-	Id       int    `json:"id"`
-	Name     string `json:"name"`
-	LastName string `json:"lastName"`
-	Message  string `json:"message"`
-}
-
-type MessageUserDeleted struct {
-	Message string `json:"message"`
-}
-
-func responseUserCreate(userModel models.User) User {
-	return User{
+func responseUserCreate(userModel models.User) interfaces.UserResonseCreate {
+	return interfaces.UserResonseCreate{
 		Id:       int(userModel.Id),
 		Name:     userModel.Name,
 		LastName: userModel.LastName,
@@ -26,8 +18,8 @@ func responseUserCreate(userModel models.User) User {
 	}
 }
 
-func responseErrorOrNotFound(msg string) MessageUserDeleted {
-	return MessageUserDeleted{
+func responseErrorOrNotFound(msg string) interfaces.MessageUserDeleted {
+	return interfaces.MessageUserDeleted{
 		Message: msg,
 	}
 }
@@ -74,6 +66,46 @@ func CreateUser(c *fiber.Ctx) error {
 	responseUser := responseUserCreate(user)
 
 	return c.Status(200).JSON(responseUser)
+}
+
+func UpdateUser(c *fiber.Ctx) error {
+	var newUser interfaces.UserEdit
+	findUser := models.User{}
+	paramsId := c.Params("id")
+	strconv.ParseUint(paramsId, 0, 64)
+
+	if err := c.BodyParser(&newUser); err != nil {
+		response := responseErrorOrNotFound("invalid data")
+		return c.Status(400).JSON(response)
+	}
+
+	if newUser.Name == "" && newUser.LastName == "" {
+		response := responseErrorOrNotFound("you must be send at least one data")
+		return c.Status(400).JSON(response)
+	}
+
+	if err := database.Database.Db.Find(&findUser, paramsId); err.Error != nil {
+		response := responseErrorOrNotFound("internal server error")
+		return c.Status(500).JSON(response)
+	}
+
+	if newUser.Name == "" {
+		newUser.Name = findUser.Name
+	}
+
+	if newUser.LastName == "" {
+		newUser.LastName = findUser.LastName
+	}
+
+	findUser.Name = newUser.Name
+	findUser.LastName = newUser.LastName
+
+	if err := database.Database.Db.Save(&findUser); err.Error != nil {
+		response := responseErrorOrNotFound("internal server error")
+		return c.Status(500).JSON(response)
+	}
+
+	return c.Status(200).JSON(findUser)
 }
 
 func DeleteUser(c *fiber.Ctx) error {
