@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"strconv"
-
 	"github.com/dilanEspindola/restapiFiber/database"
 	"github.com/dilanEspindola/restapiFiber/interfaces"
 	"github.com/dilanEspindola/restapiFiber/models"
@@ -72,7 +70,6 @@ func UpdateUser(c *fiber.Ctx) error {
 	var newUser interfaces.UserEdit
 	findUser := models.User{}
 	paramsId := c.Params("id")
-	strconv.ParseUint(paramsId, 0, 64)
 
 	if err := c.BodyParser(&newUser); err != nil {
 		response := responseErrorOrNotFound("invalid data")
